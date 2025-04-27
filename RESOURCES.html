@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RESOURCES</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="ChatGPT Image Apr 15, 2025, 09_21_02 PM.png" />
+
+  <!-- Bootstrap & Cesium CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.112/Build/Cesium/Widgets/widgets.css" rel="stylesheet" />
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="RESOURCES.css" />
+</head>
+<body>
+
+<!-- 🌌 Background Video -->
+<div class="videoBG">
+  <video autoplay muted loop playsinline id="myVideo">
+    <source src="asteroids.mp4" type="video/mp4" />
+  </video>
+</div>
+
+<!-- 🌌 NAVBAR -->
+<nav class="navbar navbar-expand-lg">
+  <div class="container-fluid"> 
+    <img src="ChatGPT Image Apr 15, 2025, 09_21_02 PM.png" alt="logo" class="navbar-logo" />
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link active" href="planets.html">HOME</a></li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">EXPLORE</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="Explore.html">Explore</a></li>
+            <li><a class="dropdown-item" href="RESOURCES.html">Resources</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="JOURNEYTOTHECOSMOS.html">ABOUT</a></li>
+          </ul>
+        </li>
+        <li class="nav-item"><a class="nav-link" href="LOGIN_SIGNUP.html">LOG IN</a></li>
+        <li class="nav-item"><a class="nav-link disabled" href="#">WELCOME TRAVELER</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- 🛰️ ISS 3D Tracker -->
+<section class="container-fluid text-white text-center mt-5">
+  <h2 class="mb-3">🛰️ Live ISS Tracker (3D Earth View)</h2>
+  <p>Track the International Space Station in real time on a 3D globe.</p>
+  <div id="cesiumContainer"></div>
+</section>
+
+<!-- Resource Cards -->
+<div class="container mt-5">
+  <div class="row">
+    <div class="col-sm-4 mt-5">
+      <div class="card">
+        <img src="stublue.jpg" class="card-img-top" alt="...">
+        <div class="card-body">
+          <p class="card-text">
+            <a href="https://www.bmcc.cuny.edu/student-affairs/student-affairs-departments/" target="_blank" style="color: grey; text-decoration: none; font-family: fantasy;">Student Affairs</a>
+          </p>
+        </div>
+      </div>
+    </div>
+    <!-- Add more resource cards if needed -->
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="text-center text-white mt-5">
+  <p>&copy; 2025 Astronomy Database. All Rights Reserved.</p>
+  <p>Built by <strong>DEBORAH AGOSTO</strong></p>
+</footer>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cesium.com/downloads/cesiumjs/releases/1.112/Build/Cesium/Cesium.js"></script>
+
+<script>
+  // ✅ Cesium Token
+  Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJlNjEwMDRhYy0xMjczLTRiMDgtYmFmOS01ZDAxZWY3YTg3ZGMiLCJpZCI6Mjk0NzYxLCJpYXQiOjE3NDQ4MzA5MjB9.wKXgE0VL3UNKfArQ85gR6Z983wkULZ5aP6FsPjI95r0';
+
+  const viewer = new Cesium.Viewer('cesiumContainer', {
+    terrainProvider: Cesium.createWorldTerrain(),
+    shouldAnimate: true,
+    animation: false,
+    timeline: false
+  });
+
+  const issEntity = viewer.entities.add({
+    name: "ISS",
+    model: {
+      uri: 'https://raw.githubusercontent.com/typpo/spacekit-assets/main/models/iss.glb',
+      minimumPixelSize: 100,
+      maximumScale: 20000,
+    },
+    label: {
+      text: "🛰️ ISS",
+      font: "16px sans-serif",
+      fillColor: Cesium.Color.CYAN,
+      style: Cesium.LabelStyle.FILL_AND_OUTLINE,
+      verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+      pixelOffset: new Cesium.Cartesian2(0, -30),
+    },
+    position: Cesium.Cartesian3.fromDegrees(0, 0, 420000)
+  });
+
+  const trailPositions = [];
+  const trail = viewer.entities.add({
+    polyline: {
+      positions: [],
+      width: 2,
+      material: Cesium.Color.YELLOW.withAlpha(0.5),
+    }
+  });
+
+  async function updateISS() {
+    const res = await fetch("https://api.wheretheiss.at/v1/satellites/25544");
+    const data = await res.json();
+    const position = Cesium.Cartesian3.fromDegrees(data.longitude, data.latitude, data.altitude * 1000);
+    issEntity.position = position;
+
+    trailPositions.push(position);
+    if (trailPositions.length > 100) trailPositions.shift();
+    trail.polyline.positions = [...trailPositions];
+
+    if (!viewer.trackedEntity) viewer.trackedEntity = issEntity;
+  }
+
+  updateISS();
+  setInterval(updateISS, 5000);
+</script>
+</body>
+</html>
